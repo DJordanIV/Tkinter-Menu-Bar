@@ -1,5 +1,6 @@
 from tkinter import *
 from ctypes import windll
+import math
 
 #this code works fine on windows 10, i didn't try it in any other OS, if you use window 8, 7, ... 
 #or you use a distro of linux, you can try it anyway
@@ -20,7 +21,7 @@ DGRAY = '#25292e' # window background color               (Hex color)
 RGRAY = '#10121f' # title bar color                       (Hex color)
 
 root.config(bg="#25292e")
-title_bar = Frame(root, bg=RGRAY, relief='raised', bd=0,highlightthickness=0)
+
 
 
 def set_appwindow(mainWindow): # to display the window icon on the taskbar, 
@@ -57,8 +58,13 @@ def maximize_me():
 
     if root.maximized == False: # if the window was not maximized
         root.normal_size = root.geometry()
+        screenwidth = root.winfo_screenwidth() #set screen width
+        currentscreen = root.normal_size.split("+") #find current pos
+        screenselect = math.ceil(int(currentscreen[1])/screenwidth) #math to find monitor
+        adjscreenpos = screenwidth * (screenselect - 1) #creates a screen choice
         expand_button.config(text=" 🗗 ")
-        root.geometry(f"{root.winfo_screenwidth()}x{root.winfo_screenheight()}+0+0")
+        adjscreenheight = root.winfo_screenheight() - 48 #account for title bar on windows
+        root.geometry(f"{root.winfo_screenwidth()}x{adjscreenheight}+{adjscreenpos}+0")
         root.maximized = not root.maximized 
         # now it's maximized
         
@@ -68,22 +74,118 @@ def maximize_me():
         root.maximized = not root.maximized
         # now it is not maximized
 
+def resizex(event):
+    xwin = root.winfo_x()
+    difference = (event.x_root - xwin) - root.winfo_width()
+    
+    if root.winfo_width() > 150 : # 150 is the minimum width for the window
+        try:
+            root.geometry(f"{ root.winfo_width() + difference }x{ root.winfo_height() }")
+        except:
+            pass
+    else:
+        if difference > 0: # so the window can't be too small (150x150)
+            try:
+                root.geometry(f"{ root.winfo_width() + difference }x{ root.winfo_height() }")
+            except:
+                pass
+              
+    resizex_widget.config(bg=DGRAY)
+
+def resizeleftx(event):
+    xwin = root.winfo_x()
+    ylock = root.winfo_y()
+    xlock = root.winfo_width() + (xwin-event.x_root)
+    if root.winfo_width() > 150:
+        try:
+            root.geometry(f'+{event.x_root}+{ylock}')
+            root.geometry(f"{xlock}x{root.winfo_height()}")       
+        except:
+            pass
+    else:
+        if root.winfo_width() <= 150 and xlock > 150:
+            try:
+                root.geometry(f'+{event.x_root}+{ylock}')
+                root.geometry(f"{xlock}x{root.winfo_height()}")    
+            except:
+                pass
+
+def resizey(event):
+    ywin = root.winfo_y()
+    difference = (event.y_root - ywin) - root.winfo_height()
+
+    if root.winfo_height() > 150: # 150 is the minimum height for the window
+        try:
+            root.geometry(f"{ root.winfo_width()  }x{ root.winfo_height() + difference}")
+        except:
+            pass
+    else:
+        if difference > 0: # so the window can't be too small (150x150)
+            try:
+                root.geometry(f"{ root.winfo_width()  }x{ root.winfo_height() + difference}")
+            except:
+                pass
+
+    resizex_widget.config(bg=DGRAY)
+
+def resizetopy(event):
+    xlock = root.winfo_x()
+    ywin = root.winfo_y()
+    ylock = root.winfo_height() + (ywin-event.y_root)
+    if root.winfo_height() > 150:
+        try:
+            root.geometry(f'+{xlock}+{event.y_root}')
+            root.geometry(f"{root.winfo_width()}x{ylock}")       
+        except:
+            pass
+    else:
+        if root.winfo_height() <= 150 and ylock > 150:
+            try:
+                root.geometry(f'+{xlock}+{event.y_root}')
+                root.geometry(f"{root.winfo_width()}x{ylock}")  
+            except:
+                pass
+
+
+# a frame for the main area of the window, this is where the actual app will go
+
+
+title_bar = Frame(root, bg=RGRAY, relief='raised', bd=0,highlightthickness=0)
+window = Frame(root, bg=DGRAY,highlightthickness=0)
+resizetopy_widget = Frame(title_bar,bg=DGRAY,cursor='sb_v_double_arrow')
+resizex_widget = Frame(window,bg=DGRAY,cursor='sb_h_double_arrow')
+resizeleftx_widget = Frame(window,bg=DGRAY,cursor='sb_h_double_arrow')
+resizey_widget = Frame(window,bg=DGRAY,cursor='sb_v_double_arrow')
+
+# pack the widgets
+title_bar.pack(fill=X)
+window.pack(expand=1, fill=BOTH) # replace this with your main Canvas/Frame/etc.
+resizetopy_widget.pack(side=TOP,ipadx=2,fill=X)
+resizex_widget.pack(side=RIGHT,ipadx=2,fill=Y)
+resizeleftx_widget.pack(side=LEFT,ipadx=2,fill=Y)
+resizey_widget.pack(side=BOTTOM,ipadx=2,fill=X)
+
+
+
 # put a close button on the title bar
 close_button = Button(title_bar, text='  ×  ', command=root.destroy,bg=RGRAY,padx=2,pady=2,font=("calibri", 13),bd=0,fg='white',highlightthickness=0)
 expand_button = Button(title_bar, text=' 🗖 ', command=maximize_me,bg=RGRAY,padx=2,pady=2,bd=0,fg='white',font=("calibri", 13),highlightthickness=0)
 minimize_button = Button(title_bar, text=' 🗕 ',command=minimize_me,bg=RGRAY,padx=2,pady=2,bd=0,fg='white',font=("calibri", 13),highlightthickness=0)
 title_bar_title = Label(title_bar, text=tk_title, bg=RGRAY,bd=0,fg='white',font=("helvetica", 10),highlightthickness=0)
 
-# a frame for the main area of the window, this is where the actual app will go
-window = Frame(root, bg=DGRAY,highlightthickness=0)
 
-# pack the widgets
-title_bar.pack(fill=X)
 close_button.pack(side=RIGHT,ipadx=7,ipady=1)
 expand_button.pack(side=RIGHT,ipadx=7,ipady=1)
 minimize_button.pack(side=RIGHT,ipadx=7,ipady=1)
 title_bar_title.pack(side=LEFT, padx=10)
-window.pack(expand=1, fill=BOTH) # replace this with your main Canvas/Frame/etc.
+
+
+resizex_widget.bind("<B1-Motion>",resizex)
+resizeleftx_widget.bind("<B1-Motion>",resizeleftx)
+resizey_widget.bind("<B1-Motion>",resizey)
+resizetopy_widget.bind("<B1-Motion>",resizetopy)
+
+
 #xwin=None
 #ywin=None
 # bind title bar motion to the move window function
@@ -143,9 +245,9 @@ def get_pos(event): # this is executed when the title bar is clicked to move the
         title_bar.bind('<ButtonRelease-1>', release_window)
         title_bar_title.bind('<B1-Motion>', move_window)
         title_bar_title.bind('<ButtonRelease-1>', release_window)
-    else:
-        expand_button.config(text=" 🗖 ")
-        root.maximized = not root.maximized
+    #else:
+        #expand_button.config(text=" 🗖 ")
+        #root.maximized = not root.maximized
 
 title_bar.bind('<Button-1>', get_pos) # so you can drag the window from the title bar
 title_bar_title.bind('<Button-1>', get_pos) # so you can drag the window from the title 
@@ -157,55 +259,6 @@ expand_button.bind('<Enter>', change_size_on_hovering)
 expand_button.bind('<Leave>', return_size_on_hovering)
 minimize_button.bind('<Enter>', changem_size_on_hovering)
 minimize_button.bind('<Leave>', returnm_size_on_hovering)
-
-# resize the window width
-resizex_widget = Frame(window,bg=DGRAY,cursor='sb_h_double_arrow')
-resizex_widget.pack(side=RIGHT,ipadx=2,fill=Y)
-
-
-def resizex(event):
-    xwin = root.winfo_x()
-    difference = (event.x_root - xwin) - root.winfo_width()
-    
-    if root.winfo_width() > 150 : # 150 is the minimum width for the window
-        try:
-            root.geometry(f"{ root.winfo_width() + difference }x{ root.winfo_height() }")
-        except:
-            pass
-    else:
-        if difference > 0: # so the window can't be too small (150x150)
-            try:
-                root.geometry(f"{ root.winfo_width() + difference }x{ root.winfo_height() }")
-            except:
-                pass
-              
-    resizex_widget.config(bg=DGRAY)
-
-resizex_widget.bind("<B1-Motion>",resizex)
-
-# resize the window height
-resizey_widget = Frame(window,bg=DGRAY,cursor='sb_v_double_arrow')
-resizey_widget.pack(side=BOTTOM,ipadx=2,fill=X)
-
-def resizey(event):
-    ywin = root.winfo_y()
-    difference = (event.y_root - ywin) - root.winfo_height()
-
-    if root.winfo_height() > 150: # 150 is the minimum height for the window
-        try:
-            root.geometry(f"{ root.winfo_width()  }x{ root.winfo_height() + difference}")
-        except:
-            pass
-    else:
-        if difference > 0: # so the window can't be too small (150x150)
-            try:
-                root.geometry(f"{ root.winfo_width()  }x{ root.winfo_height() + difference}")
-            except:
-                pass
-
-    resizex_widget.config(bg=DGRAY)
-
-resizey_widget.bind("<B1-Motion>",resizey)
 
 # some settings
 root.bind("<FocusIn>",deminimize) # to view the window by clicking on the window icon on the taskbar
